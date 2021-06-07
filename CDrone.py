@@ -168,6 +168,9 @@ class CDrone:
                 src_connection.generate_send_named_value_int(
                     self, bytearray("SETNEWSPAN", "ASCII"), self.current_mission.get_span())
 
+            if msg.name == "UPYLONOFST":    #добавил
+                self.current_mission.set_pylon_offset(msg.value)#добавил
+
             if msg.name == "UNITYUNITY":
                 if msg.value == 101:
                     msg = src_connection.master.mav.command_long_encode(

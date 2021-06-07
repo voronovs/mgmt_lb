@@ -23,15 +23,20 @@ class CSpan:
         self._pylon_start = pylon_start
         self._pylon_end = pylon_end
         self._heading = self.calculate_bearing()
+        self._pylon_offset = 5 #добавил
         print("get_bearing_to: ", self._pylon_start.get_coordinate().get_bearing_to(self._pylon_end.get_coordinate()))
 
     def __str__(self):
         return "CSpan({:} : {:})".format(self._pylon_start, self._pylon_end)
 
+    def set_pylon_offset(self, new_pylon_offset):   #добавил
+        self._pylon_offset = new_pylon_offset   #добавил
+        print("Pylon offset sent ", self._pylon_offset) #добавил
+
     def get_land_coordinate_3d(self) -> CCoordinate:
         # print(self._pylon_start.get_coordinate().get_position_tuple())
         # print(self._pylon_end.get_coordinate().get_position_tuple())
-        return self._pylon_start.get_coordinate().offset_along_heading(self._heading, 5.0)
+        return self._pylon_start.get_coordinate().offset_along_heading(self._heading, self._pylon_offset) #изменил
 
     def get_takeoff_coordinate_3d(self) -> CCoordinate:
         return self._pylon_end.get_coordinate().offset_along_heading(self._heading, -5.0)
