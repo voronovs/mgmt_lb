@@ -1,7 +1,7 @@
 # mgmt_lb
 mgmt_lb for CableWalker Auto Navigation System
 
-2021/06/09 "mgmt_lb и CDrone устарели"
+2021/06/09 Nikita Rodichenko: "mgmt_lb и CDrone устарели"
 
 Wiki
 In CMGMT.py:
