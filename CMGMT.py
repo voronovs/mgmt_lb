@@ -370,6 +370,9 @@ class CMGMT:
                 bytearray("SETNEWSPAN", "ASCII"), self.current_mission.get_span())
             self.broadcast_mavlink_message(out_msg)
 
+        if msg.name == "UPYLONOFST":    #добавил
+            self.current_mission.get_current_span().set_pylon_offset(msg.value)#добавил
+
         if msg.name == "UNITYUNITY":
             # Arm
             if msg.value == 101:
