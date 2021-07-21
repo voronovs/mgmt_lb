@@ -31,7 +31,7 @@ class CMGMT:
 
         self._pylon_alt = 30.0
         self._takeoff_alt = 30.0
-        self._takeoff_alt_from_wire = 9.0
+        self._takeoff_alt_from_wire = 7.0
 
         self.offset_alt = 3.0
         self.is_taking_off = False
