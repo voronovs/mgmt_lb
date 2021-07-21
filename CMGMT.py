@@ -31,6 +31,7 @@ class CMGMT:
 
         self._pylon_alt = 30.0
         self._takeoff_alt = 30.0
+        self._takeoff_alt_from_wire = 9.0
 
         self.offset_alt = 3.0
         self.is_taking_off = False
@@ -376,6 +377,9 @@ class CMGMT:
         if msg.name == "WHEELSMOVE":  # добавил
             self.current_mission.get_current_span().move_wheels_to_next_waypoint(msg.value)  # добавил
 
+        if msg.name == "ALTOVRWIRE":  # добавил
+            self._takeoff_alt_from_wire = msg.value  # добавил
+
         if msg.name == "UNITYUNITY":
             # Arm
             if msg.value == 101:
@@ -397,7 +401,7 @@ class CMGMT:
                 self.is_taking_off = True
                 self.auto_land = False
                 self.full_land = False
-                self.drone.takeoff(9.0, self._mav)
+                self.drone.takeoff(self._takeoff_alt_from_wire, self._mav)
 
             # Land flight mode
             elif msg.value == 110:
