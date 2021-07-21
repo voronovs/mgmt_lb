@@ -46,7 +46,7 @@ class CMGMT:
         self._lidar_distance_vert = 0.0
         self._lidar_distance_hor = 0.0
         self.LIDAR_DIST_HOR_THRESHOLD = 0.1
-        self.LIDAR_DIST_VERT_THRESHOLD_FULL_LAND = 0.35
+        self.LIDAR_DIST_VERT_THRESHOLD_FULL_LAND = 0.37
         self.LIDAR_DIST_VERT_THRESHOLD_AUTOLAND = 4.5
         self.LIDAR_TIMEOUT = 1.0
         self.LIDAR_FVAL_THRESHOLD = 0.4
@@ -224,7 +224,7 @@ class CMGMT:
                 # print("FULL_LAND IS", self._full_land)
                 if self.lidar_above_wire(0.2) and self.auto_land:
                     # print("DESCENDING")
-                    self.offset_alt = self.offset_alt - 0.05
+                    self.offset_alt = self.offset_alt - 0.07
                     if \
                             (abs(self._lidar_distance_vert) < self.LIDAR_DIST_VERT_THRESHOLD_FULL_LAND) \
                                     and self.lidar_above_wire(0.1) \
@@ -372,6 +372,9 @@ class CMGMT:
 
         if msg.name == "UPYLONOFST":    #добавил
             self.current_mission.get_current_span().set_pylon_offset(msg.value)#добавил
+
+        if msg.name == "WHEELSMOVE":  # добавил
+            self.current_mission.get_current_span().move_wheels_to_next_waypoint(msg.value)  # добавил
 
         if msg.name == "UNITYUNITY":
             # Arm
