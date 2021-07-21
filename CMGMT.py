@@ -288,7 +288,7 @@ class CMGMT:
             if msg.get_type() == "MISSION_ITEM_INT":
                 msg = cast(MAVLink_mission_item_int_message, msg)
                 if msg.seq == 0:
-                    self._home_buffer = CCoordinate(msg.x, msg.y, msg.z + 9.0)#prev value "+18"
+                    self._home_buffer = CCoordinate(msg.x, msg.y, msg.z + 15.0)#prev value "+18"
                     print(self._home_buffer.get_position_tuple())
                 if msg.command == MAV_CMD_NAV_TAKEOFF:
                     self._takeoff_alt = msg.z
