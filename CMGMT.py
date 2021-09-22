@@ -371,6 +371,12 @@ class CMGMT:
                 bytearray("SETNEWSPAN", "ASCII"), self.current_mission.get_span())
             self.broadcast_mavlink_message(out_msg)
 
+        if msg.name == "STARTDIAGN":    #добавил 2021/09/21
+            self.current_mission.get_current_span().start_autodiagnonstic()#добавил 2021/09/21
+
+        if msg.name == "STOPDIAGNO":    #добавил 2021/09/21
+            self.current_mission.get_current_span().stop_autodiagnonstic()#добавил 2021/09/21
+
         if msg.name == "UPYLONOFST":    #добавил
             self.current_mission.get_current_span().set_pylon_offset(msg.value)#добавил
 

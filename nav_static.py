@@ -1,7 +1,9 @@
 from typing import List
 from gnss_lib import *
 import jsonpickle
+
 from move import WireMover
+from diagnosticproxy import DiagnosticProxy
 
 
 class CPylon:
@@ -33,6 +35,19 @@ class CSpan:
     def set_pylon_offset(self, new_pylon_offset):   #добавил
         self._pylon_offset = new_pylon_offset   #добавил
         print("Pylon offset sent ", self._pylon_offset) #добавил
+
+    def start_autodiagnonstic(self):   #добавил 2021/09/21
+        dproxy = DiagnosticProxy(callback_fun)
+# Функция не блокирующая! Для отслеживания завершения использовать коллбэк
+        res = dproxy.do_diagnostic()
+        print('Command sent: {}'.format(res))
+        print("Autodiagnostic started") #добавил 2021/09/21
+
+    def stop_autodiagnonstic(self):   #добавил 2021/09/21
+        dproxy = DiagnosticProxy(callback_fun)
+        res = dproxy.halt()
+        print('Command sent: {}'.format(res))
+        print("Autodiagnostic stopped") #добавил 2021/09/21
 
     def callback_fun(self): #вызовется, когда платформа доедет
 
