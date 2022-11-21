@@ -37,14 +37,14 @@ class CSpan:
         print("Pylon offset sent ", self._pylon_offset) #добавил
 
     def start_autodiagnonstic(self):   #добавил 2021/09/21
-        dproxy = DiagnosticProxy(callback_fun)
+        dproxy = DiagnosticProxy(self.callback_fun)
 # Функция не блокирующая! Для отслеживания завершения использовать коллбэк
         res = dproxy.do_diagnostic()
         print('Command sent: {}'.format(res))
         print("Autodiagnostic started") #добавил 2021/09/21
 
     def stop_autodiagnonstic(self):   #добавил 2021/09/21
-        dproxy = DiagnosticProxy(callback_fun)
+        dproxy = DiagnosticProxy(self.callback_fun)
         res = dproxy.halt()
         print('Command sent: {}'.format(res))
         print("Autodiagnostic stopped") #добавил 2021/09/21
@@ -55,7 +55,7 @@ class CSpan:
 
     def move_wheels_to_next_waypoint(self, empty):   #функция движения по проводу
         # Для каждого вызова необходимо создавать новый экземпляр WireMover
-        wm = WireMover(callback_fun)
+        wm = WireMover(self.callback_fun)
 
         # Функция не блокирующая! Для отслеживания завершения использовать коллбэк
         # В случае успеха подачи команды вернет True
