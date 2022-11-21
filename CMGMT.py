@@ -31,7 +31,9 @@ class CMGMT:
 
         self._pylon_alt = 30.0
         self._takeoff_alt = 30.0
-        self._takeoff_alt_from_wire = 7.0
+        self._takeoff_alt_from_wire = 9.0
+
+        self._auto_navigation_mode = 0 # 0-none, 1-LandB and ready for LandC, 2 - LandC
 
         self.offset_alt = 3.0
         self.is_taking_off = False
@@ -225,7 +227,7 @@ class CMGMT:
                 # print("FULL_LAND IS", self._full_land)
                 if self.lidar_above_wire(0.2) and self.auto_land:
                     # print("DESCENDING")
-                    self.offset_alt = self.offset_alt - 0.07
+                    self.offset_alt = self.offset_alt - 0.06
                     if \
                             (abs(self._lidar_distance_vert) < self.LIDAR_DIST_VERT_THRESHOLD_FULL_LAND) \
                                     and self.lidar_above_wire(0.1) \
@@ -235,6 +237,19 @@ class CMGMT:
                 if not self._full_land:
                     print("OFFSET_ALT: ", self.offset_alt)
                     self.goto_span_land(self.offset_alt)
+
+        if self._auto_navigation_mode == 1:     #LandB
+            if abs(self._lidar_distance_vert) < 6.5:
+                self._auto_navigation_mode = 2
+                # GoToLandC
+                self.is_taking_off = False
+                self.auto_land = False
+                self.full_land = False
+                self.offset_alt = 4.0
+                self.goto_span_land(self.offset_alt)
+        elif self._auto_navigation_mode == 2:   #LandC
+            if abs(self._lidar_distance_vert) < 4.5:
+                self._auto_navigation_mode = 0
 
     def process_lidar_stats(self, msg: MAVLink_debug_vect_message) -> None:
         self._lidar_last_timestamp = time.time()
@@ -289,7 +304,7 @@ class CMGMT:
             if msg.get_type() == "MISSION_ITEM_INT":
                 msg = cast(MAVLink_mission_item_int_message, msg)
                 if msg.seq == 0:
-                    self._home_buffer = CCoordinate(msg.x, msg.y, msg.z + 15.0)#prev value "+18"
+                    self._home_buffer = CCoordinate(msg.x, msg.y, msg.z + 9.0)#prev value "+18"
                     print(self._home_buffer.get_position_tuple())
                 if msg.command == MAV_CMD_NAV_TAKEOFF:
                     self._takeoff_alt = msg.z
@@ -441,7 +456,8 @@ class CMGMT:
 
             # Approach current span landing with LVL1/base altitude
             elif msg.value == 135:
-                # GoToLand
+                # GoToLandA
+                self._auto_navigation_mode = 0
                 self.is_taking_off = False
                 self.auto_land = False
                 self.full_land = False
@@ -450,16 +466,28 @@ class CMGMT:
 
             # Approach current span landing with LVL1/base altitude
             elif msg.value == 132:
-                # GoToLand
+                # GoToLandB
+                self._auto_navigation_mode = 0
                 self.is_taking_off = False
                 self.auto_land = False
                 self.full_land = False
                 self.offset_alt = 6.0
                 self.goto_span_land(self.offset_alt)
 
-            # Approach current span landing with LVL2 altitude
+            # Approach current span landing with LVL1/base altitude automatic
+            elif msg.value == 137:
+                # GoToLandBC
+                self._auto_navigation_mode = 1
+                self.is_taking_off = False
+                self.auto_land = False
+                self.full_land = False
+                self.offset_alt = 6.0
+                self.goto_span_land(self.offset_alt)
+
+            # Approach current span landing with LVL2 altitude GoToLandC()
             elif msg.value == 133:
-                # GoToLand Low
+                # GoToLandC
+                self._auto_navigation_mode = 0
                 self.is_taking_off = False
                 self.auto_land = False
                 self.full_land = False
