@@ -3,6 +3,7 @@ import time
 INSTALLED = False
 try:
     import rospy
+    import rosnode
     import actionlib
     import cw_main.msg
     INSTALLED = True
