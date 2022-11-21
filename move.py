@@ -17,7 +17,10 @@ class WireMover():
             print('No CW_ROS ENVIRONMENT INSTALLED!')
             return
         self.node_name = 'cw_tsuru_proxy{}'.format(random.randint(0, 56000))
-        node = rospy.init_node(self.node_name)
+        try:
+            node = rospy.init_node(self.node_name)
+        except:
+            pass
         self.callback_fun = callback_fun
         self.client = actionlib.SimpleActionClient('/cw/robot', cw_main.msg.cmdAction)
         self.done = False
