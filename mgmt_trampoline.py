@@ -103,6 +103,15 @@ while not doExit:
         # Also send MGMT status
         drone.generate_send_lidar_status()
         drone.generate_send_mgmt_status()
+        drone.generate_send_distance_to_next_tower()
+
+        if drone.is_armed:
+            drone.pantorgraf_servo_open(drone._mgmt._mav)
+        else:
+            drone.pantorgraf_servo_close(drone._mgmt._mav)
+
+        drone._mgmt.move_to_next_tower()
+
         hbTime = ct
 
     if ct - cycleTime > 2.0:

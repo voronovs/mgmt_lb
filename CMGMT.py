@@ -73,6 +73,10 @@ class CMGMT:
 
         self._first_approach = True
 
+        self._wheels_move_flag = False
+        self._wheels_stop_flag = True
+        self.stop_distance_to_tower = 9
+
     def set_drone(self, drone: 'CDrone2.CDrone2'):
         self._drone = drone
 
@@ -359,6 +363,15 @@ class CMGMT:
         except IOError:
             print("No buffered mission available")
 
+    def move_to_next_tower(self):
+        if self.drone._distance_to_next_tower > self.stop_distance_to_tower and self._wheels_move_flag == True:
+            self.drone.wheels_forward(self._mav, 982)
+            self._wheels_move_flag = False
+        if self.drone._distance_to_next_tower <= self.stop_distance_to_tower and self._wheels_stop_flag == False:
+            self.drone.wheels_forward(self._mav, 1495)
+            self._wheels_stop_flag = True
+            self._wheels_move_flag = False
+
     def goto_span_land(self, offset_alt: float):
         print("OFFSET_ALT: ", offset_alt)
 
@@ -395,8 +408,14 @@ class CMGMT:
         if msg.name == "UPYLONOFST":    #добавил
             self.current_mission.get_current_span().set_pylon_offset(msg.value)#добавил
 
+        if msg.name == "DIST_TOWER":
+            self.stop_distance_to_tower = msg.value
+
         if msg.name == "WHEELSMOVE":  # добавил
-            self.current_mission.get_current_span().move_wheels_to_next_waypoint(msg.value)  # добавил
+            self._wheels_move_flag = True
+            self._wheels_stop_flag = False
+            #self.current_mission.get_current_span().move_wheels_to_next_waypoint(msg.value)  # добавил
+            #self.drone.pantorgraf_servo(self._mav)# добавил 2022-11-21
 
         if msg.name == "ALTOVRWIRE":  # добавил
             self._takeoff_alt_from_wire = msg.value  # добавил

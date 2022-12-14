@@ -1,5 +1,5 @@
 # Some code adapted from https://github.com/dronekit/dronekit-python/blob/master/examples/guided_set_speed_yaw/guided_set_speed_yaw.py
-
+import math
 from math import *
 
 
@@ -87,6 +87,16 @@ class CCoordinate:
         delta_lon = lon2 - lon1
 
         return sqrt((delta_lat * delta_lat) + (delta_lon * delta_lon)) * 1.113195e5
+
+    def get_2d_accurate_distance_to(self, location2):
+        earth_radius = 6378137  # Radius of "spherical" earth
+        lat1, lon1, alt1 = self.get_position_tuple_float()
+        lat2, lon2, alt2 = location2.get_position_tuple_float()
+
+        delta_lat = lat2 - lat1
+        delta_lon = lon2 - lon1
+
+        return 2*earth_radius*asin(sqrt(0.5-cos(pi*delta_lat/180)/2+cos(lat1*pi/180)*cos(lat2*pi/180)*(1-cos(delta_lon*pi/180))/2))
 
     def offset_by(self, dNorth, dEast):
         """
