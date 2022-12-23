@@ -31,6 +31,9 @@ class CMGMT:
 
         self._pylon_alt = 30.0
         self._takeoff_alt = 30.0
+        self._takeoff_alt_from_wire = 9.0
+
+        self._auto_navigation_mode = 0 # 0-none, 1-LandB and ready for LandC, 2 - LandC
 
         self.offset_alt = 3.0
         self.is_taking_off = False
@@ -46,7 +49,7 @@ class CMGMT:
         self._lidar_distance_vert = 0.0
         self._lidar_distance_hor = 0.0
         self.LIDAR_DIST_HOR_THRESHOLD = 0.1
-        self.LIDAR_DIST_VERT_THRESHOLD_FULL_LAND = 0.35
+        self.LIDAR_DIST_VERT_THRESHOLD_FULL_LAND = 0.37
         self.LIDAR_DIST_VERT_THRESHOLD_AUTOLAND = 4.5
         self.LIDAR_TIMEOUT = 1.0
         self.LIDAR_FVAL_THRESHOLD = 0.4
@@ -69,6 +72,10 @@ class CMGMT:
         self.MISSION_BUFFER_FILENAME = 'mission_buffer.json'
 
         self._first_approach = True
+
+        self._wheels_move_flag = False
+        self._wheels_stop_flag = True
+        self.stop_distance_to_tower = 9
 
     def set_drone(self, drone: 'CDrone2.CDrone2'):
         self._drone = drone
@@ -224,7 +231,7 @@ class CMGMT:
                 # print("FULL_LAND IS", self._full_land)
                 if self.lidar_above_wire(0.2) and self.auto_land:
                     # print("DESCENDING")
-                    self.offset_alt = self.offset_alt - 0.05
+                    self.offset_alt = self.offset_alt - 0.06
                     if \
                             (abs(self._lidar_distance_vert) < self.LIDAR_DIST_VERT_THRESHOLD_FULL_LAND) \
                                     and self.lidar_above_wire(0.1) \
@@ -234,6 +241,19 @@ class CMGMT:
                 if not self._full_land:
                     print("OFFSET_ALT: ", self.offset_alt)
                     self.goto_span_land(self.offset_alt)
+
+        if self._auto_navigation_mode == 1:     #LandB
+            if abs(self._lidar_distance_vert) < 6.5:
+                self._auto_navigation_mode = 2
+                # GoToLandC
+                self.is_taking_off = False
+                self.auto_land = False
+                self.full_land = False
+                self.offset_alt = 4.0
+                self.goto_span_land(self.offset_alt)
+        elif self._auto_navigation_mode == 2:   #LandC
+            if abs(self._lidar_distance_vert) < 4.5:
+                self._auto_navigation_mode = 0
 
     def process_lidar_stats(self, msg: MAVLink_debug_vect_message) -> None:
         self._lidar_last_timestamp = time.time()
@@ -343,6 +363,15 @@ class CMGMT:
         except IOError:
             print("No buffered mission available")
 
+    def move_to_next_tower(self):
+        if self.drone._distance_to_next_tower > self.stop_distance_to_tower and self._wheels_move_flag == True:
+            self.drone.wheels_forward(self._mav, 982)
+            self._wheels_move_flag = False
+        if self.drone._distance_to_next_tower <= self.stop_distance_to_tower and self._wheels_stop_flag == False:
+            self.drone.wheels_forward(self._mav, 1495)
+            self._wheels_stop_flag = True
+            self._wheels_move_flag = False
+
     def goto_span_land(self, offset_alt: float):
         print("OFFSET_ALT: ", offset_alt)
 
@@ -370,8 +399,26 @@ class CMGMT:
                 bytearray("SETNEWSPAN", "ASCII"), self.current_mission.get_span())
             self.broadcast_mavlink_message(out_msg)
 
+        if msg.name == "STARTDIAGN":    #добавил 2021/09/21
+            self.current_mission.get_current_span().start_autodiagnonstic()#добавил 2021/09/21
+
+        if msg.name == "STOPDIAGNO":    #добавил 2021/09/21
+            self.current_mission.get_current_span().stop_autodiagnonstic()#добавил 2021/09/21
+
         if msg.name == "UPYLONOFST":    #добавил
             self.current_mission.get_current_span().set_pylon_offset(msg.value)#добавил
+
+        if msg.name == "DIST_TOWER":
+            self.stop_distance_to_tower = msg.value
+
+        if msg.name == "WHEELSMOVE":  # добавил
+            self._wheels_move_flag = True
+            self._wheels_stop_flag = False
+            #self.current_mission.get_current_span().move_wheels_to_next_waypoint(msg.value)  # добавил
+            #self.drone.pantorgraf_servo(self._mav)# добавил 2022-11-21
+
+        if msg.name == "ALTOVRWIRE":  # добавил
+            self._takeoff_alt_from_wire = msg.value  # добавил
 
         if msg.name == "UNITYUNITY":
             # Arm
@@ -394,7 +441,7 @@ class CMGMT:
                 self.is_taking_off = True
                 self.auto_land = False
                 self.full_land = False
-                self.drone.takeoff(9.0, self._mav)
+                self.drone.takeoff(self._takeoff_alt_from_wire, self._mav)
 
             # Land flight mode
             elif msg.value == 110:
@@ -428,7 +475,8 @@ class CMGMT:
 
             # Approach current span landing with LVL1/base altitude
             elif msg.value == 135:
-                # GoToLand
+                # GoToLandA
+                self._auto_navigation_mode = 0
                 self.is_taking_off = False
                 self.auto_land = False
                 self.full_land = False
@@ -437,16 +485,28 @@ class CMGMT:
 
             # Approach current span landing with LVL1/base altitude
             elif msg.value == 132:
-                # GoToLand
+                # GoToLandB
+                self._auto_navigation_mode = 0
                 self.is_taking_off = False
                 self.auto_land = False
                 self.full_land = False
                 self.offset_alt = 6.0
                 self.goto_span_land(self.offset_alt)
 
-            # Approach current span landing with LVL2 altitude
+            # Approach current span landing with LVL1/base altitude automatic
+            elif msg.value == 137:
+                # GoToLandBC
+                self._auto_navigation_mode = 1
+                self.is_taking_off = False
+                self.auto_land = False
+                self.full_land = False
+                self.offset_alt = 6.0
+                self.goto_span_land(self.offset_alt)
+
+            # Approach current span landing with LVL2 altitude GoToLandC()
             elif msg.value == 133:
-                # GoToLand Low
+                # GoToLandC
+                self._auto_navigation_mode = 0
                 self.is_taking_off = False
                 self.auto_land = False
                 self.full_land = False

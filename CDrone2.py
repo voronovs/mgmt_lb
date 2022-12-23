@@ -21,6 +21,13 @@ class CDrone2:
         self._roll = 0.0
         self._global_pos = CCoordinate(0, 0, 0.0)
         self._alias = alias
+        self.WHEELS_DRIVER_PORT = 9
+        self.WHEELS_DRIVER_FORWARD_PWM = 982
+        self.WHEELS_DRIVER_BACK_PWM = 2006
+        self.PANTOGRAF_SERVO_PORT = 8
+        self.PANTOGRAF_SERVO_CLOSE_PWM = 1085
+        self.PANTOGRAF_SERVO_OPEN_PWM = 2006
+        self._distance_to_next_tower = 0
         pass
 
     def spin(self) -> MAVLink_message:
@@ -66,6 +73,38 @@ class CDrone2:
         msg.pack(source_mav)
         self.send(msg)
 
+    def pantorgraf_servo_close(self, source_mav: MAVLink):
+        msg = self._connection.master.mav.command_long_encode(self._system_id, 1,
+                                   mavlink.MAV_CMD_DO_SET_SERVO, 0,
+                                   self.PANTOGRAF_SERVO_PORT, self.PANTOGRAF_SERVO_CLOSE_PWM,
+                                   0, 0, 0, 0, 0)
+        msg.pack(source_mav)
+        self.send(msg)
+
+    def pantorgraf_servo_open(self, source_mav: MAVLink):
+        msg = self._connection.master.mav.command_long_encode(self._system_id, 1,
+                                   mavlink.MAV_CMD_DO_SET_SERVO, 0,
+                                   self.PANTOGRAF_SERVO_PORT, self.PANTOGRAF_SERVO_OPEN_PWM,
+                                   0, 0, 0, 0, 0)
+        msg.pack(source_mav)
+        self.send(msg)
+
+    def wheels_forward(self, source_mav: MAVLink, speed):
+        msg = self._connection.master.mav.command_long_encode(self._system_id, 1,
+                                   mavlink.MAV_CMD_DO_SET_SERVO, 0,
+                                   self.WHEELS_DRIVER_PORT, speed,
+                                   0, 0, 0, 0, 0)
+        msg.pack(source_mav)
+        self.send(msg)
+
+    def wheels_back(self, source_mav: MAVLink):
+        msg = self._connection.master.mav.command_long_encode(self._system_id, 1,
+                                   mavlink.MAV_CMD_DO_SET_SERVO, 0,
+                                   self.WHEELS_DRIVER_PORT, self.WHEELS_DRIVER_BACK_PWM,
+                                   0, 0, 0, 0, 0)
+        msg.pack(source_mav)
+        self.send(msg)
+
     def disarm(self, source_mav: MAVLink):
         msg = self._connection.master.mav.command_long_encode(
             self._system_id,  # target_system
@@ -106,6 +145,13 @@ class CDrone2:
         val = self._mgmt.generate_mgmt_status_value()
         msg = self._connection.generate_pack_named_value_int(
             bytearray("MGMT_STATS", "ASCII"), val)
+        self._mgmt.broadcast_mavlink_message(msg)
+
+    def generate_send_distance_to_next_tower(self):
+        self._distance_to_next_tower = int(self._global_pos.get_2d_accurate_distance_to(self._mgmt.current_mission.get_current_span()._pylon_end.get_coordinate()))
+        val = self._distance_to_next_tower
+        msg = self._connection.generate_pack_named_value_int(
+            bytearray("DIST_NEXTT", "ASCII"), val)
         self._mgmt.broadcast_mavlink_message(msg)
 
     def generate_send_lidar_status(self):

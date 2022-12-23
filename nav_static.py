@@ -2,6 +2,9 @@ from typing import List
 from gnss_lib import *
 import jsonpickle
 
+from move import WireMover
+from diagnosticproxy import DiagnosticProxy
+
 
 class CPylon:
     def __init__(self, coordinate: CCoordinate):
@@ -23,7 +26,7 @@ class CSpan:
         self._pylon_start = pylon_start
         self._pylon_end = pylon_end
         self._heading = self.calculate_bearing()
-        self._pylon_offset = 5 #добавил
+        self._pylon_offset = 15 #добавил
         print("get_bearing_to: ", self._pylon_start.get_coordinate().get_bearing_to(self._pylon_end.get_coordinate()))
 
     def __str__(self):
@@ -32,6 +35,35 @@ class CSpan:
     def set_pylon_offset(self, new_pylon_offset):   #добавил
         self._pylon_offset = new_pylon_offset   #добавил
         print("Pylon offset sent ", self._pylon_offset) #добавил
+
+    def start_autodiagnonstic(self):   #добавил 2021/09/21
+        dproxy = DiagnosticProxy(self.callback_fun)
+# Функция не блокирующая! Для отслеживания завершения использовать коллбэк
+        res = dproxy.do_diagnostic()
+        print('Command sent: {}'.format(res))
+        print("Autodiagnostic started") #добавил 2021/09/21
+
+    def stop_autodiagnonstic(self):   #добавил 2021/09/21
+        dproxy = DiagnosticProxy(self.callback_fun)
+        res = dproxy.halt()
+        print('Command sent: {}'.format(res))
+        print("Autodiagnostic stopped") #добавил 2021/09/21
+
+    def callback_fun(self): #вызовется, когда платформа доедет
+
+        print('Done callback!') #добавил
+
+    def move_wheels_to_next_waypoint(self, empty):   #функция движения по проводу
+        # Для каждого вызова необходимо создавать новый экземпляр WireMover
+        wm = WireMover(self.callback_fun)
+
+        # Функция не блокирующая! Для отслеживания завершения использовать коллбэк
+        # В случае успеха подачи команды вернет True
+        res = wm.move_to_next_tower()
+        print('Command sent: {}'.format(res))
+
+        self._moving_by_wheels = empty  # добавил
+        print("Move via wheels command sent ", self._moving_by_wheels)  # добавил
 
     def get_land_coordinate_3d(self) -> CCoordinate:
         # print(self._pylon_start.get_coordinate().get_position_tuple())
